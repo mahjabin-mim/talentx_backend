@@ -1,0 +1,4 @@
+Migration Command
+
+Add-Migration -context MainDbContext MigrationName
+

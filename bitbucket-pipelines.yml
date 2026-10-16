@@ -1,0 +1,94 @@
+image: mcr.microsoft.com/dotnet/sdk:10.0
+
+options:
+  docker: true
+
+pipelines:
+  branches:
+    talentx-cicd:
+
+      # =========================
+      # 1. TEST STAGE
+      # =========================
+      - step:
+          name: Run Tests
+          caches:
+            - dotnetcore
+          script:
+            - echo "Restoring solution..."
+            - dotnet restore TalentX.sln
+
+            - echo "Running Unit Tests..."
+            - dotnet test tests/UnitTests/UnitTests.csproj --configuration Release
+
+            - echo "Running Integration Tests..."
+            - dotnet test tests/IntegrationTests/IntegrationTests.csproj --configuration Release
+
+
+      # =========================
+      # 2. BUILD + PUSH TO ECR
+      # =========================
+      - step:
+          name: Build & Push Docker Image
+          image: amazon/aws-cli
+          services:
+            - docker
+          script:
+            - export IMAGE_TAG=${BITBUCKET_COMMIT}
+
+            - echo "Logging into AWS ECR..."
+            - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+            - echo "Building Docker image..."
+            - docker build --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_REGION=$AWS_REGION -t talentx-api:$IMAGE_TAG .
+
+            - echo "Tagging image..."
+            - docker tag talentx-api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:$IMAGE_TAG
+            - docker tag talentx-api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:latest
+
+            - echo "Pushing image..."
+            - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:$IMAGE_TAG
+            - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:latest
+
+
+      # =========================
+      # 3. DEPLOY TO EC2 (SSH PIPE STYLE)
+      # =========================
+      - step:
+          name: Deploy to EC2 Server
+          deployment: staging
+          image: atlassian/default-image:3
+          script:
+            - pipe: atlassian/ssh-run:0.2.2
+              variables:
+                SSH_USER: ${DEPLOY_USER}
+                SERVER: ${STAGING_HOST}
+                COMMAND: |
+                  set -e
+
+                  echo "Logging into ECR..."
+                  aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+                  echo "Pulling latest image..."
+                  docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:latest
+
+                  echo "Stopping old container..."
+                  docker stop talentx-api || true
+
+                  echo "Removing old container..."
+                  docker rm talentx-api || true
+
+                  echo "Starting new container..."
+                  docker run -d \
+                    --name talentx-api \
+                    -p 5000:5000 \
+                    -e ASPNETCORE_ENVIRONMENT=Development \
+                    --restart unless-stopped \
+                    --network talentx_default \
+                    $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/talentx-api:latest
+
+                  echo "Waiting for service..."
+                  sleep 10
+
+                  echo "Deployment Done"
+         

@@ -1,0 +1,9 @@
+Hello {{FullName}},
+
+Use this OTP code to verify your TalentX account:
+
+{{OtpCode}}
+
+This code expires at {{ExpiresAtUtc}}.
+
+If you did not create a TalentX account, you can ignore this email.

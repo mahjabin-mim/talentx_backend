@@ -1,0 +1,20 @@
+[
+  {
+    "id": "6ca2641d-8ea7-4838-8823-e1f9c59f1d57",
+    "fullname": "Ariana Khan",
+    "email": "ariana.khan@example.com",
+    "phoneNumber": "+8801712345678",
+    "isActive": true,
+    "emailConfirmed": false,
+    "userRole": "Talent"
+  },
+  {
+    "id": "3d4236b6-c5f6-4b09-a815-148952f0ce78",
+    "fullname": "Nabil Hasan",
+    "email": "nabil.hasan@example.com",
+    "phoneNumber": "+8801812345678",
+    "isActive": true,
+    "emailConfirmed": true,
+    "userRole": "Employer"
+  }
+]

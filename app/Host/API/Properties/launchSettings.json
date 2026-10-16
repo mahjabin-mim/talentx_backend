@@ -1,0 +1,32 @@
+﻿{
+    "$schema": "https://json.schemastore.org/launchsettings.json",
+    "profiles": {
+        "development": {
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "launchBrowser": false,
+            "applicationUrl": "https://localhost:5000",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        "staging": {
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "launchBrowser": false,
+            "applicationUrl": "https://talentx-web.ait-us.co/",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Staging"
+            }
+        },
+        "production": {
+            "commandName": "Project",
+            "dotnetRunMessages": true,
+            "launchBrowser": false,
+            "applicationUrl": "https://talentx-web.ait-us.co/",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Production"
+            }
+        }
+    }
+}
